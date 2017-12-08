@@ -1,7 +1,10 @@
+
 # -*- coding: ascii -*-
 # Lempel-Ziv-Welch encoding algorithm in python
 # based on psudo code from http://www.geeksforgeeks.org/lzw-lempel-ziv-welch-compression-technique/
 # made by Ron Tam
+# -*- coding: utf-8 -*-
+SIZE = 255
 
 SIZE = 256
 
