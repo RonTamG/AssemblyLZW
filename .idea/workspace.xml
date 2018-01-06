@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="5cb17c1f-790e-4434-a6fd-7ff5e13a8aa5" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/LZComp.py" afterPath="$PROJECT_DIR$/LZComp.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="AssemblyProject.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -28,7 +28,7 @@
       <file leaf-file-name="LZComp.py" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/LZComp.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="76" column="19" selection-start="1681" selection-end="1681" vertical-scroll-proportion="0.25027564" vertical-offset="1065" max-vertical-offset="2108">
+            <state line="76" column="19" selection-start="1681" selection-end="1681" vertical-scroll-proportion="1.4244763" vertical-offset="0" max-vertical-offset="2108">
               <folding />
             </state>
           </provider>
@@ -368,7 +368,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/LZComp.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="76" column="19" selection-start="1681" selection-end="1681" vertical-scroll-proportion="0.25027564" vertical-offset="1065" max-vertical-offset="2108">
+        <state line="76" column="19" selection-start="1681" selection-end="1681" vertical-scroll-proportion="1.4244763" vertical-offset="0" max-vertical-offset="2108">
           <folding />
         </state>
       </provider>

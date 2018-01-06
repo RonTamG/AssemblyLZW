@@ -105,8 +105,8 @@ def main():
     """
     Add Documentation here
     """
-##    stream = raw_input(">>>")
-    stream = get_file_stream("test.jpg")
+    stream = raw_input(">>>")
+##    stream = get_file_stream("test.jpg")
 
     encoded = compress(stream)
     decoded = uncompress(encoded)
