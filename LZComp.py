@@ -30,12 +30,15 @@ def compress(uncompressed):
     for c in uncompressed:  # [c]urrent char
         if p + c in dicti:
             p += c
+            if len(p) >= 3:
+                print p
         else:
             output.append(dicti[p])
             dicti[p+c] = dict_size
             dict_size += 1
 
             p = c
+
 
     # If we have one character left
     if p:
@@ -110,8 +113,7 @@ def main():
 
     encoded = compress(stream)
     decoded = uncompress(encoded)
-
-    write_to_file(decoded, 't2.jpg')
+    print encoded
 
 
 if __name__ == '__main__':

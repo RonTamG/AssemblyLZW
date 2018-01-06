@@ -12,11 +12,16 @@ test2 db 10, 13, "option 2$"
 
 filename db "paka.lzw",0 ; made obsolete because of get file name
 filehandle dw 10 dup(?)
-ErrorMsg db "ERROR", 10, 13, "exitting...$"
-Buffer db 30 dup(?)
+opening_error_msg db "Opening error", 10, 13, "exitting...$"
+Buffer dw 30 dup(?)
 
 ; getting file name
 f_name db 20 dup(?)
+
+output_filehandle dw 10 dup(?)
+output_file_name db "output.txt",0
+opening_error_msg_out db "Output open error$" ;;;; remove
+blah db "BA"
 ; --------------------------
 CODESEG
 
@@ -112,11 +117,11 @@ proc open_file
 ;	lea dx, [filename]
 	lea dx, [f_name + 2]
 	int 21h
-	jc openerror
+	jc open_error
 	mov [filehandle], ax
 	ret
-openerror:
-	mov dx, offset ErrorMsg
+open_error:
+	mov dx, offset opening_error_msg
 	mov ah, 9h
 	int 21h
 	; exit app
@@ -148,29 +153,57 @@ proc close_file
 	ret
 endp close_file
 
-; ---!!!!-----
-; print the letter in Buffer
-proc print_letter
-	mov dl, [Buffer]
-	mov ah, 2h
+
+proc open_output
+	mov ah, 3Dh	
+	mov al, 1h
+;	lea dx, [filename]
+	lea dx, [output_file_name]
+	int 21h
+	jc opening_error
+	mov [output_filehandle], ax
+	ret
+opening_error:
+	mov dx, offset opening_error_msg_out
+	mov ah, 9h
+	int 21h
+	; exit app
+	mov ax, 4c00h
 	int 21h
 	
 	ret
-endp print_letter
-; ----!!!!----- probably won't be used in final product
-; -----END-FILE-PROCEDURES--------
+endp open_output
+proc close_output
+	mov ah, 3Eh
+	mov bx, [output_filehandle]
+	int 21h
 
+	ret
+endp close_output
+proc write_byte
+	mov ah, 40h ; write to file
+	mov bx, [output_filehandle]
+	mov cx, 2
+	mov dx, offset Buffer
+	int 21h
+
+	ret
+endp write_byte
+; -----END-FILE-PROCEDURES--------
+	
 proc file_work
 	call open_file
+	call open_output
 	mov cx, 9
 poopoo:
 	push cx
 	call read_file
-	call print_letter
+	call write_byte
 	pop cx
 	loop poopoo
 	; close file after we get to end
 	call close_file
+	call close_output
 	
 	ret
 endp file_work
@@ -199,9 +232,12 @@ start:
 ; --------------------------
 	call start_screen
 	call getFileName
-	call file_work
+	call open_output
+	mov [Buffer], "AB"
+	call write_byte
+	call close_output
 ; --------------------------
-	
+
 exit:
 	mov ax, 4c00h
 	int 21h
