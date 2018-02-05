@@ -3,6 +3,7 @@ MODEL small
 STACK 100h
 DATASEG
 ; --------------------------
+; start_screen
 welcome_msg db "Welcome to the Lempel Ziv Welch compression program", 10, 13, "Choose what you want to do:", 10, 13, "$"
 options_msg db "	1. Compress", 10, 13, "	2. Uncompress", 10,13, "$"
 invalid_input_msg db 10, 13, "Invalid input", 10, 13, "exitting...$"
@@ -12,7 +13,7 @@ test2 db 10, 13, "option 2$"
 
 filehandle dw 10 dup(?)
 opening_error_msg db "Opening error", 10, 13, "exitting...$"
-Buffer db 4 dup(?) ; char read from file
+Buffer dw 4 dup(?) ; char read from file
 
 ; getting file name
 f_name db 20 dup(?)
@@ -120,7 +121,7 @@ proc open_file
 	mov ah, 3Dh	
 	xor al, al
 ;	lea dx, [f_name + 2]
-	lea dx, [temp_file]
+	lea dx, [temp_file] ;;;;;;; !!!! CHANGE IN FINAL
 	int 21h
 	jc open_error
 	mov [filehandle], ax
@@ -140,26 +141,43 @@ endp open_file
 ; Output: One byte of the file to
 ; 		  Buffer
 proc read_file
+	push bx
+	push cx
+	push dx
+
 	mov ah, 3Fh
 	mov bx, [filehandle]
 	mov cx, 1
 	mov dx, offset Buffer
 	int 21h
 
+	pop dx
+	pop cx
+	pop bx
 	ret
 endp read_file
 
 ; close the open file
 proc close_file
+    push bx
+	push ax
+
 	mov ah, 3Eh
 	mov bx, [filehandle]
 	int 21h
 
+	pop ax
+	pop bx
 	ret
 endp close_file
 
 
 proc open_output
+	push bx
+	push cx
+	push ax
+	push dx
+
 	mov ah, 3Dh	
 	mov al, 1h
 ;	lea dx, [filename]
@@ -167,6 +185,11 @@ proc open_output
 	int 21h
 	jc opening_error
 	mov [output_filehandle], ax
+
+	pop dx
+	pop ax
+	pop cx
+	pop bx
 	ret
 opening_error:
 	mov dx, offset opening_error_msg_out
@@ -186,24 +209,23 @@ proc close_output
 	ret
 endp close_output
 proc write_byte
+	push bx
+	push cx
+	push ax
+	push dx
+
 	mov ah, 40h ; write to file
 	mov bx, [output_filehandle]
-	mov cx, 1
+	mov cx, 2 ; CHANGED FROM 1!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	mov dx, offset Buffer
 	int 21h
 
+	pop dx
+	pop ax
+	pop cx
+	pop bx
 	ret
 endp write_byte
-; ---!!!!-----
-; print the letter in Buffer
-proc print_letter
-	mov dl, [Buffer]
-	mov ah, 2h
-	int 21h
-	
-	ret
-endp print_letter
-; ----!!!!----- probably won't be used in final product
 ; -----END-FILE-PROCEDURES--------
 	
 
@@ -258,7 +280,7 @@ proc SearchDict
 	Word1 equ [bp + 4]
 	Word2 equ [bp + 6]
 	
-	xor bx, bx
+	mov bx, offset CompDict
 	xor cx, cx
 next:
 	mov ax, Word1
@@ -309,77 +331,34 @@ proc print
 	pop bp
 	ret 2
 endp print
-
-
-;;;;;; NEED TO CLARIFY THE WAY I OUTPUT
-; Get's 2 parameters: start of stream and length of stream
-; output: outputs to file 'output.lzw'
-proc Compress2
+; input: p, c
+; Adds character to dictionary
+proc add_to_dictionary
 	push bp
 	mov bp, sp
-	; to save
-	push ax ; used as helper
-	; params
-	stream equ [bp + 4]
-	streamLen equ [bp + 6]
-	; internal variables
-	sub sp, 2
-	p equ [bp - 2]
-	
-	current equ bx
-	
-	mov cx, streamLen
-	mov bx, stream ; bx = start of stream, and p
-	mov si, [bx] ; si used as helper for moving into p
-	mov p, si
-	inc bx ; = c
-compression:
-	xor ax, ax
-	mov al, [bx]
-	mov dx, p
-	push ax ; to save value
-	push dx
-	push ax
-	call SearchDict
-	inc bx ; to move to next value in stream
-	cmp ax, 1
-	pop ax ; to save value for p + c
-	je inDicti
-	jmp notInDicti
+	p equ [bp + 6]
+	c equ [bp + 4]
+	push di
+	push bx
 
-inDicti:
-	push dx
-	
-	mov dh, dl
-	mov dl, al
-	mov p, dx
-	pop dx
-	jmp compression
+	mov di, [dictCurrentAddr]
+	mov bx, p
+	mov [di], bx
+	add [dictCurrentAddr], 2
+	mov di, [dictCurrentAddr]
+	mov bx, c
+	mov [di], bx
+	add [dictCurrentAddr], 2
 
-notInDicti:
-	push 0
-	push p
-	call SearchDict
-	push cx ; character in dicti
-	call print
-	jmp compression
+	add [dictCurrentLen], 1
 
-	
-	
+	pop bx
+	pop di
 	pop bp
 	ret 4
-endp Compress2
-
-; Input: bx
-; adds bx to dictionary
-proc add_to_dictionary
-	mov di, [dictCurrentAddr]
-	mov [di], bx
-	add [dictCurrentAddr], 4 
-	inc [dictCurrentLen]
-	
-	ret
 endp add_to_dictionary
+
+
 proc compress
 	push bp
 	mov bp, sp
@@ -391,17 +370,26 @@ proc compress
 	; p = first char in file
 	push bx ; save bx
 	xor bx, bx
-	mov bl, [Buffer]
+	mov bl, [byte ptr Buffer]
 	mov p, bx
 	pop bx ; get saved bx
 
-	; setting c
+	; setting c as 0
 	c equ [bp - 4]
-compression_loop:
-	call read_file
 	push bx
 	xor bx, bx
-	mov bl, [Buffer]
+	mov c, bx ; c = 0
+	pop bx
+
+compression_loop:
+	call read_file ; get next c
+	; check for exit (if 0 bytes have been read.)
+	cmp ax, 0
+	je exit_compression_too_far
+	; c = read_file
+	push bx
+	xor bx, bx
+	mov bl, [byte ptr Buffer]
 	mov c, bl
 	pop bx
 
@@ -415,12 +403,32 @@ compression_loop:
 	call SearchDict
 ;	cmp ax, 1
 ;	je in_dicti_twobyte
-	
+	jmp two_byte_add_to_dictionary
 
+two_byte_add_to_dictionary:
+	push p
+	push 0
+	call SearchDict
+	mov bx, cx
+	mov [Buffer], bx
+	call write_byte
+	push p
+	push c
+	call add_to_dictionary
+	push bx
+	mov bx, c
+	mov p, bx
+	pop bx
+	jmp compression_loop
+
+; because exit compression was too far
+exit_compression_too_far:
+	jmp remaining_output
 
 one_byte:
 	mov bl, c
 	mov bh, p
+	; bx = p + c
 	push bx ; for p = p + c
 	push bx
 	push 0h
@@ -431,13 +439,38 @@ one_byte:
 	jmp not_in_dictionary
 
 in_dictionary:
+	; p = p + c
 	mov p, bx
+	; continue loop
+	jmp compression_loop
 not_in_dictionary:
-	mov [Buffer], bh
-	call write_byte ; write p to output
-	call add_to_dictionary ; add p + c to dicti
+	; write p to output
+	push p
+	push 0
+	call SearchDict
+	mov [Buffer], cx
+	call write_byte
+	; add p + c to dicti
+	push bx ; p + c
+	push 0h ; None (don't need to add c twice)
+	call add_to_dictionary
+	mov p, bl ; p = c
+	; continue loop
+	jmp compression_loop
+
+remaining_output:
+	; if p = 0 (=none)
+	cmp p, 0
+	je exit_compression
+	; else
+	push p
+	push 0
+	call SearchDict
+	mov [Buffer], cx
+	call write_byte
 
 
+exit_compression:
 	add sp, 4 ; for [p] and [c]
 	pop bp
 	ret
